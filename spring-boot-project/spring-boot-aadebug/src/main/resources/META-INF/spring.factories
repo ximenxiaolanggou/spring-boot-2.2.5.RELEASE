@@ -1,0 +1,5 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+org.springframework.boot.debug.configuration.MyConfiguration
+
+org.springframework.boot.debug.TestAutoConfig=\
+ org.springframework.boot.debug.configuration.TestConfiguration

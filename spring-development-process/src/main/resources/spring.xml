@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xsi:schemaLocation="http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+	<bean name="user" class="center.helloworld.spring.entity.User"/>
+
+	<bean name="userService" class="center.helloworld.spring.service.UserService">
+		<property name="username" value="张三"/>
+	</bean>
+</beans>
