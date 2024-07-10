@@ -2,4 +2,10 @@ org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
 org.springframework.boot.debug.configuration.MyConfiguration
 
 org.springframework.boot.debug.TestAutoConfig=\
- org.springframework.boot.debug.configuration.TestConfiguration
+org.springframework.boot.debug.configuration.TestConfiguration
+
+
+
+org.springframework.context.ApplicationListener=\
+org.springframework.boot.debug.listeners.MySpringApplicationListener,\
+org.springframework.boot.debug.listeners.MyEventListener

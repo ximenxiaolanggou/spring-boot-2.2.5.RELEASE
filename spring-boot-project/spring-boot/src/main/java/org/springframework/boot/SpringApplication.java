@@ -271,9 +271,9 @@ public class SpringApplication {
 		// webApplication类型，reactive或servlet
 		this.webApplicationType = WebApplicationType.deduceFromClasspath();
 		// 加载配置在spring.factories文件中的ApplicationContextInitializer对应的类型并实例化
-		// 并将加载的数据存储在了 initializers 成员变量中。
+		// 并将加载的数据存储在了 initializers 成员变量中。（配置文件中）
 		setInitializers((Collection) getSpringFactoriesInstances(ApplicationContextInitializer.class));
-		// 初始化监听器 并将加载的监听器实例对象存储在了listeners成员变量中
+		// 初始化监听器 并将加载的监听器实例对象存储在了listeners成员变量中（配置文件中）
 		setListeners((Collection) getSpringFactoriesInstances(ApplicationListener.class));
 		// 反推main方法所在的Class对象 并记录在了mainApplicationClass对象中
 		this.mainApplicationClass = deduceMainApplicationClass();
@@ -319,12 +319,12 @@ public class SpringApplication {
 		// 获取 SpringApplicationRunListener 加载的是 EventPublishingRunListener
 		// 获取启动时到监听器
 		SpringApplicationRunListeners listeners = getRunListeners(args);
-		// 触发启动事件
+		// 触发启动事件(ApplicationStartingEvent)
 		listeners.starting();
 		try {
 			// 构造一个应用程序的参数持有类
 			ApplicationArguments applicationArguments = new DefaultApplicationArguments(args);
-			// 创建并配置环境
+			// 创建并配置环境,并发布ApplicationEnvironmentPreparedEvent事件
 			ConfigurableEnvironment environment = prepareEnvironment(listeners, applicationArguments);
 			// 配置需要忽略的BeanInfo信息
 			configureIgnoreBeanInfo(environment);
@@ -335,9 +335,12 @@ public class SpringApplication {
 			// 加载配置的启动异常处理器
 			exceptionReporters = getSpringFactoriesInstances(SpringBootExceptionReporter.class,
 					new Class[] { ConfigurableApplicationContext.class }, context);
-			// 刷新前操作
+			// 刷新前操作，并发布ApplicationContextInitializedEvent事件
 			prepareContext(context, environment, listeners, applicationArguments, printedBanner);
 			// 刷新应用上下文 完成Spring容器的初始化
+			// 这里面核心方法就是spring的refresh所以其中也会有添加监听器(包含自定义)
+			// 所以说上面的几个事件才能有ApplicationStartingEvent、ApplicationEnvironmentPreparedEvent、ApplicationContextInitializedEvent这些事件触发
+			// 要想自定义事件也能接收到这些事件可以在spring.factories文件总定义
 			refreshContext(context);
 			// 刷新后操作，空方法留给子类实现
 			afterRefresh(context, applicationArguments);
@@ -346,19 +349,19 @@ public class SpringApplication {
 			if (this.logStartupInfo) {
 				new StartupInfoLogger(this.mainApplicationClass).logStarted(getApplicationLog(), stopWatch);
 			}
-			// 事件广播 启动完成了
+			// 事件广播(ApplicationStartedEvent事件) 启动完成了
 			listeners.started(context);
 			// 运行实现了ApplicationRunner、CommandLineRunner类的run方法
 			callRunners(context, applicationArguments);
 		}
 		catch (Throwable ex) {
-			// 事件广播启动出错了
+			// 事件广播(ApplicationFailedEvent事件)启动出错了
 			handleRunFailure(context, ex, exceptionReporters, listeners);
 			throw new IllegalStateException(ex);
 		}
 
 		try {
-			// 监听器运行中
+			// 监听器运行中事件发布(ApplicationReadyEvent)
 			listeners.running(context);
 		}
 		catch (Throwable ex) {
@@ -446,6 +449,7 @@ public class SpringApplication {
 	private SpringApplicationRunListeners getRunListeners(String[] args) {
 		Class<?>[] types = new Class<?>[] { SpringApplication.class, String[].class };
 		return new SpringApplicationRunListeners(logger,
+				// getSpringFactoriesInstances：读取spring.factories文件中key为SpringApplicationRunListener类型的配置类
 				getSpringFactoriesInstances(SpringApplicationRunListener.class, types, this, args));
 	}
 

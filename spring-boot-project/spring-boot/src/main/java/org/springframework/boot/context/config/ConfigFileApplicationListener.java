@@ -181,8 +181,11 @@ public class ConfigFileApplicationListener implements EnvironmentPostProcessor, 
 	}
 
 	private void onApplicationEnvironmentPreparedEvent(ApplicationEnvironmentPreparedEvent event) {
+		// 加载系统提供的环境配置的后置处理器
 		List<EnvironmentPostProcessor> postProcessors = loadPostProcessors();
+		// 添加自身对象，本对象实现了EnvironmentPostProcessor接口
 		postProcessors.add(this);
+		// 根据order进行排序
 		AnnotationAwareOrderComparator.sort(postProcessors);
 		for (EnvironmentPostProcessor postProcessor : postProcessors) {
 			postProcessor.postProcessEnvironment(event.getEnvironment(), event.getSpringApplication());
@@ -211,6 +214,7 @@ public class ConfigFileApplicationListener implements EnvironmentPostProcessor, 
 	 */
 	protected void addPropertySources(ConfigurableEnvironment environment, ResourceLoader resourceLoader) {
 		RandomValuePropertySource.addToEnvironment(environment);
+		// 创建Loader对象会完成属性加载器的加载，同时调用load方法
 		new Loader(environment, resourceLoader).load();
 	}
 
@@ -312,9 +316,13 @@ public class ConfigFileApplicationListener implements EnvironmentPostProcessor, 
 		private Map<DocumentsCacheKey, List<Document>> loadDocumentsCache = new HashMap<>();
 
 		Loader(ConfigurableEnvironment environment, ResourceLoader resourceLoader) {
+			// 环境属性赋值
 			this.environment = environment;
+			// 创建占位符处理器
 			this.placeholdersResolver = new PropertySourcesPlaceholdersResolver(this.environment);
+			// 资源加载器
 			this.resourceLoader = (resourceLoader != null) ? resourceLoader : new DefaultResourceLoader();
+			// 重点：获取spring.factories中的配置 属性加载器 用来加载properties文件或者yml文件
 			this.propertySourceLoaders = SpringFactoriesLoader.loadFactories(PropertySourceLoader.class,
 					getClass().getClassLoader());
 		}
@@ -322,13 +330,21 @@ public class ConfigFileApplicationListener implements EnvironmentPostProcessor, 
 		void load() {
 			FilteredPropertySource.apply(this.environment, DEFAULT_PROPERTIES, LOAD_FILTERED_PROPERTY,
 					(defaultProperties) -> {
+						// 创建默认的profile链表
 						this.profiles = new LinkedList<>();
+						// 创建已经处理过的profile 类别
 						this.processedProfiles = new LinkedList<>();
+						// 默认设置为未激活
 						this.activatedProfiles = false;
+						// 创建loaded对象
 						this.loaded = new LinkedHashMap<>();
+						// 加载配置 profile 的信息，默认为 default
 						initializeProfiles();
+						// 遍历 Profiles，并加载解析
 						while (!this.profiles.isEmpty()) {
+							// 从双向链表中获取一个profile对象
 							Profile profile = this.profiles.poll();
+							// 非默认的就加入，进去看源码即可清楚
 							if (isDefaultProfile(profile)) {
 								addProfileToEnvironment(profile.getName());
 							}
@@ -336,7 +352,9 @@ public class ConfigFileApplicationListener implements EnvironmentPostProcessor, 
 									addToLoaded(MutablePropertySources::addLast, false));
 							this.processedProfiles.add(profile);
 						}
+						// 解析 profile
 						load(null, this::getNegativeProfileFilter, addToLoaded(MutablePropertySources::addFirst, true));
+						// 加载默认的属性文件 application.properties
 						addLoadedPropertySources();
 						applyActiveProfiles(defaultProperties);
 					});

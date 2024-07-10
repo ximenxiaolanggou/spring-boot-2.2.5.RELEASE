@@ -2,6 +2,7 @@ package org.springframework.boot.debug;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.debug.event.MyEvent;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.io.support.SpringFactoriesLoader;
 
@@ -20,5 +21,6 @@ public class DebugApp {
 		ConfigurableApplicationContext context = SpringApplication.run(DebugApp.class, args);
 		List<String> names = SpringFactoriesLoader.loadFactoryNames(TestAutoConfig.class, DebugApp.class.getClassLoader());
 		System.out.println(names);
+		context.publishEvent(new MyEvent(new Object()));
 	}
 }
